@@ -1,0 +1,1 @@
+rootProject.name = "discord-oauth2-api"
