@@ -4,6 +4,8 @@ import de.dseelp.oauth2.discord.api.authentication.AuthorizeDiscordOauth2Request
 import de.dseelp.oauth2.discord.api.authentication.DiscordOauth2Response
 import de.dseelp.oauth2.discord.api.authentication.StateController
 import de.dseelp.oauth2.discord.api.authentication.makeDiscordOAuth2Request
+import de.dseelp.oauth2.discord.api.entities.GuildPermission
+import de.dseelp.oauth2.discord.api.entities.bitwise
 import de.dseelp.oauth2.discord.api.utils.Scope
 import de.dseelp.oauth2.discord.api.utils.join
 import io.ktor.application.*
@@ -24,20 +26,25 @@ data class DiscordClient(
     val stateController: StateController = StateController.Default()
 ) {
 
-    fun generateAuthorizationUrl(vararg scopes: Scope): String {
+    fun generateAuthorizationUrl(vararg scopes: Scope) = generateAuthorizationUrl(scopes.toList().toTypedArray())
+
+    fun generateAuthorizationUrl(scopes: Array<Scope>, permissions: Array<GuildPermission> = arrayOf(), botInvite: Boolean = false): String {
         val scopeString = scopes.join()
         return url {
             takeFrom(Url("https://discord.com/"))
             pathComponents("oauth2", "authorize")
             parameters.apply {
                 append("client_id", clientId)
-                append("redirect_uri", redirectUri)
+                append("permissions", permissions.bitwise.toString())
+                if (!botInvite) append("redirect_uri", redirectUri)
                 append("scope", scopeString)
                 append("response_type", "code")
                 append("state", stateController.generateState(redirectUri))
             }
         }.replace(scopeString.replace(' ', '+'), scopes.join(false))
     }
+
+    fun createBotInvite(vararg permissions: GuildPermission) = generateAuthorizationUrl(arrayOf(Scope.BOT), permissions.toList().toTypedArray(), true)
 
     fun configureKtorRoute(
         route: Route,
