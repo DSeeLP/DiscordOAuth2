@@ -5,10 +5,10 @@ plugins {
     java
     `maven-publish`
     signing
-    id("org.jetbrains.dokka") version "1.4.32"
-    kotlin("jvm") version "1.5.20"
+    id("org.jetbrains.dokka") version "1.5.0"
+    kotlin("jvm") version "1.5.30"
     id("com.github.johnrengelman.shadow") version "6.1.0"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.5.20"
+    id("org.jetbrains.kotlin.plugin.serialization") version "1.5.30"
 }
 
 java {
@@ -17,7 +17,7 @@ java {
 }
 
 group = "io.github.dseelp"
-version = "0.2"
+version = "0.3"
 
 repositories {
     mavenCentral()
