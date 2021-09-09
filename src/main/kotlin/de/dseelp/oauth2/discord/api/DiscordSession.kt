@@ -9,12 +9,15 @@ import de.dseelp.oauth2.discord.api.utils.Scope
 import io.ktor.client.call.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
+import io.ktor.client.utils.*
 import io.ktor.http.*
+import io.ktor.http.content.*
 import kotlinx.datetime.Instant
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
-data class DiscordSession(val client: DiscordClient, val accessToken: String, val refreshToken: String, val scopes: Array<Scope>, val tokenType: String, val expirationTime: Instant) {
+data class DiscordSession(val client: DiscordClient, val accessToken: String, val refreshToken: String, val scopes: Array<Scope>, val tokenType: String = "Bearer", val expirationTime: Instant) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is DiscordSession) return false
@@ -78,6 +81,37 @@ data class DiscordSession(val client: DiscordClient, val accessToken: String, va
         return response.receive()
     }
 
+    suspend fun joinGuild(guildId: ULong, userId: ULong) {
+        if (!scopes.contains(Scope.GUILDS_JOIN)) throw IllegalStateException("Unauthorized")
+        if (client.botToken == null) throw IllegalArgumentException("No Bot token provided")
+        val response = client.httpClient.put<HttpResponse> {
+            url {
+                takeFrom(client.endpoint)
+                pathComponents("guilds", guildId.toString(), "members", userId.toString())
+            }
+            headers {
+                append(HttpHeaders.Authorization, "Bot ${client.botToken}")
+            }
+            //header(HttpHeaders.ContentType, "application/json")
+            //contentType(ContentType.Application.Json)
+            body = CustomContent(accessToken)
+        }
+        response.request.headers.forEach { s, list ->
+            println("$s: ${list.toTypedArray().joinToString(", ")}")
+        }
+        println(response.receive<String>())
+    }
+
     @Serializable
     data class DiscordOauth2GuildJoinRequest(@SerialName("access_token") val accessToken: String)
+}
+
+@Serializable
+class CustomContent(@SerialName("access_token") val accessToken: String) : OutgoingContent.NoContent() {
+    @Transient
+    override val contentLength: Long = 0
+
+    override fun toString(): String = "EmptyContent"
+    @Transient
+    override val contentType: ContentType = ContentType.Application.Json
 }

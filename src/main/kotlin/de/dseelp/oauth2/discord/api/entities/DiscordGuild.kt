@@ -1,15 +1,18 @@
 package de.dseelp.oauth2.discord.api.entities
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.math.BigInteger
 
 @Serializable
 data class DiscordGuild(
-    val id: String,
+    val id: ULong,
     val name: String,
     val icon: String?,
     val owner: Boolean,
-    @Serializable(with = GuildPermissionArraySerializer::class) val permissions: Array<GuildPermission>
+    val features: Array<String>,
+    @Serializable(with = GuildPermissionArraySerializer::class) val permissions: Array<GuildPermission>,
+    @SerialName("permissions_new") @Serializable(with = GuildPermissionArraySerializer::class) val permissionsNew: Array<GuildPermission>
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

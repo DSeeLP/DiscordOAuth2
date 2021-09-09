@@ -12,7 +12,7 @@ abstract class DiscordOauth2Request {
     abstract val clientId: String
     abstract val clientSecret: String
     abstract val grantType: GrantType
-    abstract val redirectUri: String
+    abstract val redirectUri: String?
     abstract val urlencoded: FormDataContent
 
     protected fun applyDefaultParameters(builder: ParametersBuilder) {
@@ -20,7 +20,7 @@ abstract class DiscordOauth2Request {
             append("client_id", clientId)
             append("client_secret", clientSecret)
             append("grant_type", grantType.typeName)
-            append("redirect_uri", redirectUri)
+            if (redirectUri != null) append("redirect_uri", redirectUri!!)
         }
     }
 
@@ -33,7 +33,7 @@ abstract class DiscordOauth2Request {
 data class RefreshDiscordOauth2Request(
     override val clientId: String,
     override val clientSecret: String,
-    override val redirectUri: String,
+    override val redirectUri: String?,
     val refreshToken: String
 ): DiscordOauth2Request() {
 
@@ -48,8 +48,10 @@ data class RefreshDiscordOauth2Request(
 data class AuthorizeDiscordOauth2Request(
     override val clientId: String,
     override val clientSecret: String,
-    override val redirectUri: String,
-    val code: String
+    override val redirectUri: String?,
+    val code: String,
+    val state: String,
+    val stateParameters: Array<String>?
 ): DiscordOauth2Request() {
     override val grantType: GrantType = GrantType.AUTHORIZATION_CODE
 
@@ -57,6 +59,37 @@ data class AuthorizeDiscordOauth2Request(
         append("code", code)
         applyDefaultParameters(this)
     })
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is AuthorizeDiscordOauth2Request) return false
+
+        if (clientId != other.clientId) return false
+        if (clientSecret != other.clientSecret) return false
+        if (redirectUri != other.redirectUri) return false
+        if (code != other.code) return false
+        if (state != other.state) return false
+        if (stateParameters != null) {
+            if (other.stateParameters == null) return false
+            if (!stateParameters.contentEquals(other.stateParameters)) return false
+        } else if (other.stateParameters != null) return false
+        if (grantType != other.grantType) return false
+        if (urlencoded != other.urlencoded) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = clientId.hashCode()
+        result = 31 * result + clientSecret.hashCode()
+        result = 31 * result + (redirectUri?.hashCode() ?: 0)
+        result = 31 * result + code.hashCode()
+        result = 31 * result + state.hashCode()
+        result = 31 * result + (stateParameters?.contentHashCode() ?: 0)
+        result = 31 * result + grantType.hashCode()
+        result = 31 * result + urlencoded.hashCode()
+        return result
+    }
 }
 
 @OptIn(ExperimentalTime::class)
